@@ -172,7 +172,7 @@
             document.documentElement.style.setProperty('--inner-bg', color);
         }
 
-        // Initialize PDF rendering and Physics Page-Flip with full-spread layout
+        // Initialize PDF rendering and Physics Page-Flip
         async function loadPDFBook() {
             const url = 'document.pdf'; 
             
@@ -185,34 +185,39 @@
 
                 const bookContainer = document.getElementById('book-container');
                 
-                // Read first page to calculate exact width and height proportions
+                // Read first page to calculate dimensions
                 const firstPage = await pdfDoc.getPage(1);
                 const initialViewport = firstPage.getViewport({ scale: 1.5 });
                 const singlePageWidth = initialViewport.width;
                 const singlePageHeight = initialViewport.height;
 
-                // Generate high-resolution canvas elements for every page
+                // Generate HTML div wrapper elements with data-density="soft" for each page
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdfDoc.getPage(i);
                     const viewport = page.getViewport({ scale: 1.5 }); 
                     
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'page-wrapper';
+                    wrapper.setAttribute('data-density', 'soft'); // Forces all pages to act as soft pages
+
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
-                    
-                    canvas.className = 'page-canvas';
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
 
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    bookContainer.appendChild(canvas);
+                    wrapper.appendChild(canvas);
+                    bookContainer.appendChild(wrapper);
                 }
 
-                // Hide loading screen and display the interactive book stage
+                // Hide loading screen and display stage
                 document.getElementById('loading-screen').style.display = 'none';
                 bookContainer.style.display = 'block';
 
-                // Initialize Page-Flip physics engine
-                const pageFlip = new PageFlip(bookContainer, {
+                // Initialize Page-Flip with browser CDN global constructor 'St.PageFlip'
+                const pageFlip = new St.PageFlip(bookContainer, {
                     width: singlePageWidth,
                     height: singlePageHeight,
                     size: "stretch",
@@ -221,18 +226,13 @@
                     minHeight: 400,
                     maxHeight: 1200,
                     maxShadowOpacity: 0.3,
-                    showCover: true,         // Allows cover mode layout
+                    showCover: false,            // Prevents offsetting Page 1 to the right half
                     mobileScrollSupport: false,
                     useMouse: true,
                     flippingTime: 900
                 });
 
-                pageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
-
-                // Force all pages (including front/back covers) to act as soft, flexible paper sheets
-                pageFlip.getPageCollection().getPages().forEach((page) => {
-                    page.setHard(false); 
-                });
+                pageFlip.loadFromHTML(document.querySelectorAll('.page-wrapper'));
 
             } catch (error) {
                 console.error("Error loading PDF: ", error);
