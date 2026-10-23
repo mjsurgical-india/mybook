@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MJ Surgical - Premium 3D Page Flipbook</title>
 
-    <!-- Page-Flip 3D Engine Stylesheet -->
+    <!-- Page-Flip 3D Engine -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
-    <!-- PDF.js to render PDF pages crisply onto canvas -->
+    <!-- PDF.js Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root {
-            --outer-bg: #ffffff;     /* Default: White outer background */
-            --inner-bg: #5ca595;     /* Default: Teal inner stage background */
+            --outer-bg: #ffffff;
+            --inner-bg: #5ca595;
         }
 
         body {
@@ -30,7 +30,7 @@
             transition: background-color 0.3s ease;
         }
 
-        /* Top Theme Control Panel */
+        /* Top Control Panel */
         #control-panel {
             position: absolute;
             top: 12px;
@@ -76,7 +76,7 @@
             background: #e0e0e0;
         }
 
-        /* Perfectly Centered Stage Box with Fixed Uniform Margins */
+        /* Centered Stage Box */
         #flipbook-stage {
             width: 90vw;
             height: 82vh;
@@ -95,13 +95,11 @@
             overflow: hidden;
         }
 
-        /* The Interactive Canvas Flipbook Container */
         #book-container {
-            display: none; /* Shown after PDF renders */
+            display: none;
             margin: auto;
         }
 
-        /* On-Screen Navigation Arrow Buttons */
         .nav-btn {
             position: absolute;
             top: 50%;
@@ -130,7 +128,7 @@
         #prev-btn { left: 20px; }
         #next-btn { right: 20px; }
 
-        /* Custom Styled Loading Screen */
+        /* Custom Loading Screen */
         #loading-screen {
             position: absolute;
             display: flex;
@@ -141,6 +139,8 @@
             font-weight: bold;
             font-size: 14px;
             letter-spacing: 1px;
+            text-align: center;
+            max-width: 80%;
         }
 
         .spinner {
@@ -179,16 +179,15 @@
         </div>
     </div>
 
-    <!-- Main Stage maintaining uniform boundaries -->
+    <!-- Main Stage -->
     <div id="flipbook-stage">
-        <!-- On-Screen Navigation Icons -->
         <button id="prev-btn" class="nav-btn" title="Previous Page">&#10094;</button>
         <button id="next-btn" class="nav-btn" title="Next Page">&#10095;</button>
 
-        <!-- Custom Loading Spinner -->
+        <!-- Loading Screen Indicator -->
         <div id="loading-screen">
             <div class="spinner"></div>
-            <span>LOADING BROCHURE...</span>
+            <span id="loading-text">INITIALIZING PDF ENGINE...</span>
         </div>
 
         <!-- Canvas Flipbook Element -->
@@ -196,7 +195,6 @@
     </div>
 
     <script>
-        // Theme Switcher Functions
         function setOuterBg(color) {
             document.documentElement.style.setProperty('--outer-bg', color);
         }
@@ -207,35 +205,99 @@
 
         let globalPageFlip = null;
 
-        // Initialize PDF rendering and Physics Page-Flip with Hard Covers & Smooth Inner Pages
         async function loadPDFBook() {
-            const url = 'document.pdf'; 
+            const loadingText = document.getElementById('loading-text');
+            const url = './document.pdf'; 
             
+            // Set up worker
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
             try {
-                const loadingTask = pdfjsLib.getDocument(url);
+                loadingText.innerText = 'LOADING BROCHURE (12.4 MB)...';
+                
+                const loadingTask = pdfjsLib.getDocument({
+                    url: url,
+                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/',
+                    cMapPacked: true,
+                });
+
                 const pdfDoc = await loadingTask.promise;
                 const numPages = pdfDoc.numPages;
 
                 const bookContainer = document.getElementById('book-container');
                 
+                // Read Page 1 for initial viewport dimensions
                 const firstPage = await pdfDoc.getPage(1);
-                const initialViewport = firstPage.getViewport({ scale: 1.5 });
+                const initialViewport = firstPage.getViewport({ scale: 1.2 });
                 const pdfWidth = initialViewport.width;
                 const pdfHeight = initialViewport.height;
 
+                // Render each page sequentially to prevent memory overload
                 for (let i = 1; i <= numPages; i++) {
+                    loadingText.innerText = `RENDERING PAGE ${i} OF ${numPages}...`;
+
                     const page = await pdfDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.5 }); 
+                    const viewport = page.getViewport({ scale: 1.2 }); 
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
-                    
                     canvas.className = 'page-canvas';
 
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    await page.render({ 
+                        canvasContext: context, 
+                        viewport: viewport 
+                    }).promise;
+
                     bookContainer.appendChild(canvas);
                 }
+
+                loadingText.innerText = 'BUILDING 3D BOOK...';
+
+                document.getElementById('loading-screen').style.display = 'none';
+                bookContainer.style.display = 'block';
+
+                // Initialize 3D PageFlip
+                globalPageFlip = new St.PageFlip(bookContainer, {
+                    width: pdfWidth,
+                    height: pdfHeight,
+                    size: "stretch",
+                    minWidth: 300,
+                    maxWidth: 800,
+                    minHeight: 400,
+                    maxHeight: 1100,
+                    maxShadowOpacity: 0.5,
+                    showCover: true,
+                    mobileScrollSupport: false,
+                    useMouse: true,
+                    flippingTime: 900
+                });
+
+                globalPageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
+
+                // Connect Arrow Buttons
+                document.getElementById('next-btn').onclick = () => globalPageFlip.flipNext();
+                document.getElementById('prev-btn').onclick = () => globalPageFlip.flipPrev();
+
+                // Connect Keyboard Navigation
+                document.onkeydown = (e) => {
+                    if (e.key === 'ArrowRight') globalPageFlip.flipNext();
+                    if (e.key === 'ArrowLeft') globalPageFlip.flipPrev();
+                };
+
+            } catch (error) {
+                console.error("PDF Loading Error: ", error);
+                document.getElementById('loading-screen').innerHTML = `
+                    <div style="color:#ff6b6b; font-size:13px; line-height:1.6;">
+                        <strong>FAILED TO LOAD BROCHURE</strong><br/>
+                        ${error.message || 'Please check if document.pdf exists.'}
+                    </div>
+                `;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadPDFBook);
+    </script>
+</body>
+</html>
