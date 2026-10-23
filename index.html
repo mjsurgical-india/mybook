@@ -79,9 +79,9 @@
         /* Perfectly Centered Stage Box with Fixed Uniform Margins */
         #flipbook-stage {
             width: 90vw;
-            height: 85vh;
+            height: 82vh;
             max-width: 1350px;
-            max-height: 850px;
+            max-height: 820px;
             box-shadow: 0px 25px 60px rgba(0,0,0,0.35);
             background-color: var(--inner-bg);
             border-radius: 12px;
@@ -100,6 +100,35 @@
             display: none; /* Shown after PDF renders */
             margin: auto;
         }
+
+        /* On-Screen Navigation Arrow Buttons */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s, transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(92, 165, 149, 0.9);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        #prev-btn { left: 20px; }
+        #next-btn { right: 20px; }
 
         /* Custom Styled #5ca595 Loading Screen */
         #loading-screen {
@@ -152,6 +181,10 @@
 
     <!-- Main Stage maintaining uniform boundaries -->
     <div id="flipbook-stage">
+        <!-- On-Screen Navigation Icons -->
+        <button id="prev-btn" class="nav-btn" title="Previous Page">&#10094;</button>
+        <button id="next-btn" class="nav-btn" title="Next Page">&#10095;</button>
+
         <!-- Custom Loading Spinner -->
         <div id="loading-screen">
             <div class="spinner"></div>
@@ -172,7 +205,9 @@
             document.documentElement.style.setProperty('--inner-bg', color);
         }
 
-        // Initialize PDF rendering and Physics Page-Flip
+        let globalPageFlip = null;
+
+        // Initialize PDF rendering and Physics Page-Flip with Hard Covers & Smooth Inner Pages
         async function loadPDFBook() {
             const url = 'document.pdf'; 
             
@@ -185,54 +220,64 @@
 
                 const bookContainer = document.getElementById('book-container');
                 
-                // Read first page to calculate dimensions
                 const firstPage = await pdfDoc.getPage(1);
                 const initialViewport = firstPage.getViewport({ scale: 1.5 });
-                const singlePageWidth = initialViewport.width;
-                const singlePageHeight = initialViewport.height;
+                const pdfWidth = initialViewport.width;
+                const pdfHeight = initialViewport.height;
 
-                // Generate HTML div wrapper elements with data-density="soft" for each page
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdfDoc.getPage(i);
                     const viewport = page.getViewport({ scale: 1.5 }); 
                     
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'page-wrapper';
-                    wrapper.setAttribute('data-density', 'soft'); // Forces all pages to act as soft pages
-
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
+                    
+                    canvas.className = 'page-canvas';
 
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    wrapper.appendChild(canvas);
-                    bookContainer.appendChild(wrapper);
+                    bookContainer.appendChild(canvas);
                 }
 
-                // Hide loading screen and display stage
                 document.getElementById('loading-screen').style.display = 'none';
                 bookContainer.style.display = 'block';
 
-                // Initialize Page-Flip with browser CDN global constructor 'St.PageFlip'
-                const pageFlip = new St.PageFlip(bookContainer, {
-                    width: singlePageWidth,
-                    height: singlePageHeight,
+                // Initialize Page-Flip engine
+                globalPageFlip = new St.PageFlip(bookContainer, {
+                    width: pdfWidth,
+                    height: pdfHeight,
                     size: "stretch",
                     minWidth: 300,
-                    maxWidth: 1000,
+                    maxWidth: 800,
                     minHeight: 400,
-                    maxHeight: 1200,
-                    maxShadowOpacity: 0.3,
-                    showCover: false,            // Prevents offsetting Page 1 to the right half
+                    maxHeight: 1100,
+                    maxShadowOpacity: 0.5,
+                    showCover: true,             // Enables hardcover rigid styling for front & back covers
                     mobileScrollSupport: false,
-                    useMouse: true,
+                    useMouse: true,              // Mouse-drag corner peel
                     flippingTime: 900
                 });
 
-                pageFlip.loadFromHTML(document.querySelectorAll('.page-wrapper'));
+                globalPageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
+
+                // Connect On-Screen Arrow Buttons
+                document.getElementById('next-btn').addEventListener('click', () => {
+                    globalPageFlip.flipNext();
+                });
+
+                document.getElementById('prev-btn').addEventListener('click', () => {
+                    globalPageFlip.flipPrev();
+                });
+
+                // Connect Keyboard Arrow Keys Support (Left/Right arrows)
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowRight') {
+                        globalPageFlip.flipNext();
+                    } else if (e.key === 'ArrowLeft') {
+                        globalPageFlip.flipPrev();
+                    }
+                });
 
             } catch (error) {
                 console.error("Error loading PDF: ", error);
@@ -240,7 +285,6 @@
             }
         }
 
-        // Run builder on startup
         window.addEventListener('DOMContentLoaded', loadPDFBook);
     </script>
 </body>
