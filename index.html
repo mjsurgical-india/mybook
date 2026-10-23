@@ -3,98 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MJ Surgical - Interactive 3D Flipbook</title>
+    <title>MJ Surgical - Premium 3D Flipbook</title>
 
     <!-- DearFlip 3D Viewer Stylesheet -->
     <link href="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/css/dflip.min.css" rel="stylesheet">
 
     <style>
         :root {
-            --bg-color: #5ca595; /* Default Brand Color */
+            --outer-bg: #5ca595;
+            --inner-bg: #ffffff;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
+            background-color: var(--outer-bg);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            font-family: Arial, sans-serif;
             transition: background-color 0.3s ease;
         }
 
-        /* Theme Switcher Bar */
-        #theme-selector {
+        /* Top Theme Control Panel */
+        #control-panel {
             position: absolute;
-            top: 15px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 20px;
+            top: 12px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 18px;
+            border-radius: 25px;
             display: flex;
-            gap: 10px;
-            z-index: 999;
+            align-items: center;
+            gap: 15px;
+            z-index: 9999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
         }
-        #theme-selector button {
-            background: #fff;
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-panel-divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-theme {
+            background: #ffffff;
+            color: #222;
             border: none;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-        #theme-selector button:hover {
-            background: #ddd;
+            font-size: 11px;
+            transition: all 0.2s ease;
         }
 
-        /* The book container where the page-behind color takes effect */
+        .btn-theme:hover {
+            transform: scale(1.05);
+            background: #e0e0e0;
+        }
+
+        /* Inner Stage Box Behind Book */
         #flipbook-container {
             width: 92%;
             height: 85vh;
             max-width: 1300px;
-            box-shadow: 0px 20px 60px rgba(0,0,0,0.5);
-            background: #5ca595; /* Page behind / inner stage color */
+            box-shadow: 0px 20px 60px rgba(0,0,0,0.4);
+            background-color: var(--inner-bg) !important;
             border-radius: 8px;
+            transition: background-color 0.3s ease;
         }
     </style>
 </head>
 <body>
 
-    <!-- Theme Switcher Buttons -->
-    <div id="theme-selector">
-        <button onclick="setTheme('#5ca595')">🎨 Brand (#5ca595)</button>
-        <button onclick="setTheme('#111111')">🌙 Dark Mode</button>
-        <button onclick="setTheme('#ffffff')">☀️ White Mode</button>
+    <!-- Control Panel with Separate Outer & Inner Color Buttons -->
+    <div id="control-panel">
+        <div class="control-group">
+            <span>Outer Background:</span>
+            <button class="btn-theme" onclick="setOuterBg('#5ca595')">Brand (#5ca595)</button>
+            <button class="btn-theme" onclick="setOuterBg('#1a1a1a')">Dark Mode</button>
+            <button class="btn-theme" onclick="setOuterBg('#ffffff')">White Mode</button>
+        </div>
+
+        <div class="control-panel-divider"></div>
+
+        <div class="control-group">
+            <span>Inner Stage:</span>
+            <button class="btn-theme" onclick="setInnerBg('#5ca595')">Brand (#5ca595)</button>
+            <button class="btn-theme" onclick="setInnerBg('#2b2b2b')">Dark Stage</button>
+            <button class="btn-theme" onclick="setInnerBg('#ffffff')">White Stage</button>
+        </div>
     </div>
 
     <!-- 
-      Flipbook Container with Corner-Dragging Physics:
-      - webgl: true enables 3D paper bending and smooth mouse dragging
-      - duration: 1200 slows down the flip speed for a smoother transition
+      Flipbook Viewer Container
+      - webgl: true Enables 3D mesh physics for manual corner peeling & folding
+      - pageTextureSize: 2048 Sharpens text and prevents blur
+      - duration: 1000 Smooth 1-second animation speed
     -->
-    <div id="flipbook-container" class="_df_book" source="document.pdf" 
-         settings='{
-             "webgl": true, 
-             "pageTextureSize": 2048, 
-             "soundEnable": true, 
-             "duration": 1200, 
-             "autoEnableOutline": false, 
-             "autoEnableThumbnail": true
-         }'>
-    </div>
+    <div id="flipbook-container" class="_df_book" source="document.pdf"></div>
 
-    <!-- Working Engine Scripts -->
+    <!-- Core Engine Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/js/dflip.min.js"></script>
 
     <script>
-        // Function to dynamically change the outer background color
-        function setTheme(color) {
-            document.documentElement.style.setProperty('--bg-color', color);
+        // Global configuration settings for DearFlip
+        var option = {
+            webgl: true,                 // Real 3D paper fold and corner drag
+            pageTextureSize: 2048,       // High resolution rendering (eliminates blur)
+            soundEnable: true,           // Realistic page turn sound
+            duration: 1000,              // Smooth flip duration
+            autoEnableOutline: false,
+            autoEnableThumbnail: true,
+            overwritePDFConfig: true,
+            pdfRenderChunkSize: 10000000 // Pre-loads PDF data chunks to prevent blank pages
+        };
+
+        // Functions to set outer and inner background colors independently
+        function setOuterBg(color) {
+            document.documentElement.style.setProperty('--outer-bg', color);
+        }
+
+        function setInnerBg(color) {
+            document.documentElement.style.setProperty('--inner-bg', color);
         }
     </script>
 </body>
