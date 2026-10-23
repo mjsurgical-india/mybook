@@ -10,8 +10,8 @@
 
     <style>
         :root {
-            --outer-bg: #5ca595;
-            --inner-bg: #ffffff;
+            --outer-bg: #ffffff;     /* Default: White outer background */
+            --inner-bg: #5ca595;     /* Default: Green inner stage background */
         }
 
         body {
@@ -84,55 +84,64 @@
             border-radius: 8px;
             transition: background-color 0.3s ease;
         }
+
+        /* Custom Styled #5ca595 Loading Spinner/Animation */
+        ._df_loader, .df-loader {
+            border: 4px solid rgba(92, 165, 149, 0.2) !important;
+            border-top: 4px solid #5ca595 !important;
+            border-radius: 50% !important;
+            width: 50px !important;
+            height: 50px !important;
+            animation: spin 1s linear infinite !important;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Control Panel with Separate Outer & Inner Color Buttons -->
+    <!-- Control Panel -->
     <div id="control-panel">
         <div class="control-group">
             <span>Outer Background:</span>
-            <button class="btn-theme" onclick="setOuterBg('#5ca595')">Brand (#5ca595)</button>
-            <button class="btn-theme" onclick="setOuterBg('#1a1a1a')">Dark Mode</button>
             <button class="btn-theme" onclick="setOuterBg('#ffffff')">White Mode</button>
+            <button class="btn-theme" onclick="setOuterBg('#5ca595')">MJ Surgical</button>
+            <button class="btn-theme" onclick="setOuterBg('#1a1a1a')">Dark Mode</button>
         </div>
 
         <div class="control-panel-divider"></div>
 
         <div class="control-group">
             <span>Inner Stage:</span>
-            <button class="btn-theme" onclick="setInnerBg('#5ca595')">Brand (#5ca595)</button>
-            <button class="btn-theme" onclick="setInnerBg('#2b2b2b')">Dark Stage</button>
+            <button class="btn-theme" onclick="setInnerBg('#5ca595')">MJ Surgical</button>
             <button class="btn-theme" onclick="setInnerBg('#ffffff')">White Stage</button>
+            <button class="btn-theme" onclick="setInnerBg('#2b2b2b')">Dark Stage</button>
         </div>
     </div>
 
     <!-- 
-      Flipbook Viewer Container
-      - webgl: true Enables 3D mesh physics for manual corner peeling & folding
-      - pageTextureSize: 2048 Sharpens text and prevents blur
-      - duration: 1000 Smooth 1-second animation speed
+      Flipbook Container with Strict 3D WebGL Corner-Dragging Physics
     -->
-    <div id="flipbook-container" class="_df_book" source="document.pdf"></div>
+    <div id="flipbook-container" class="_df_book" source="document.pdf" 
+         settings='{
+             "webgl": true,
+             "pageTextureSize": 2048,
+             "soundEnable": true,
+             "duration": 1200,
+             "autoEnableOutline": false,
+             "autoEnableThumbnail": true,
+             "overwritePDFConfig": true
+         }'>
+    </div>
 
     <!-- Core Engine Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/js/dflip.min.js"></script>
 
     <script>
-        // Global configuration settings for DearFlip
-        var option = {
-            webgl: true,                 // Real 3D paper fold and corner drag
-            pageTextureSize: 2048,       // High resolution rendering (eliminates blur)
-            soundEnable: true,           // Realistic page turn sound
-            duration: 1000,              // Smooth flip duration
-            autoEnableOutline: false,
-            autoEnableThumbnail: true,
-            overwritePDFConfig: true,
-            pdfRenderChunkSize: 10000000 // Pre-loads PDF data chunks to prevent blank pages
-        };
-
-        // Functions to set outer and inner background colors independently
+        // Functions to change backgrounds dynamically via buttons
         function setOuterBg(color) {
             document.documentElement.style.setProperty('--outer-bg', color);
         }
