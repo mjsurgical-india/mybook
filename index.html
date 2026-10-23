@@ -215,14 +215,13 @@
                 const pageFlip = new PageFlip(bookContainer, {
                     width: singlePageWidth,
                     height: singlePageHeight,
-                    size: "fixed",
+                    size: "stretch",
                     minWidth: 300,
                     maxWidth: 1000,
                     minHeight: 400,
                     maxHeight: 1200,
                     maxShadowOpacity: 0.3,
-                    showCover: true,         // Keeps the cover layout style
-                    usePortrait: false,      // Keeps layout stable across spreads
+                    showCover: true,         // Allows cover mode layout
                     mobileScrollSupport: false,
                     useMouse: true,
                     flippingTime: 900
