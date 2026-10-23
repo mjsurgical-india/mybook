@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MJ Surgical - Premium 3D Flipbook</title>
+    <title>MJ Surgical - Premium 3D Page Flipbook</title>
 
-    <!-- DearFlip 3D Viewer Stylesheet -->
-    <link href="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/css/dflip.min.css" rel="stylesheet">
+    <!-- Page-Flip 3D Engine Stylesheet -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+    <!-- PDF.js to render PDF pages crisply onto canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root {
@@ -75,25 +77,49 @@
         }
 
         /* Inner Stage Box Behind Book */
-        #flipbook-container {
-            width: 92%;
+        #flipbook-stage {
+            width: 92vw;
             height: 85vh;
-            max-width: 1300px;
-            box-shadow: 0px 20px 60px rgba(0,0,0,0.4);
-            background-color: var(--inner-bg) !important;
+            max-width: 1200px;
+            max-height: 800px;
+            box-shadow: 0px 25px 60px rgba(0,0,0,0.4);
+            background-color: var(--inner-bg);
             border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
             transition: background-color 0.3s ease;
         }
 
-        /* Custom Styled #5ca595 Loading Spinner/Animation */
-        ._df_loader, .df-loader {
-            border: 4px solid rgba(92, 165, 149, 0.2) !important;
-            border-top: 4px solid #5ca595 !important;
-            border-radius: 50% !important;
-            width: 50px !important;
-            height: 50px !important;
-            animation: spin 1s linear infinite !important;
+        /* The Interactive Canvas Flipbook Container */
+        #book-container {
+            display: none; /* Shown after PDF renders */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
+        /* Custom Styled #5ca595 Loading Screen */
+        #loading-screen {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ffffff;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -121,27 +147,20 @@
         </div>
     </div>
 
-    <!-- 
-      Flipbook Container with Strict 3D WebGL Corner-Dragging Physics
-    -->
-    <div id="flipbook-container" class="_df_book" source="document.pdf" 
-         settings='{
-             "webgl": true,
-             "pageTextureSize": 2048,
-             "soundEnable": true,
-             "duration": 1200,
-             "autoEnableOutline": false,
-             "autoEnableThumbnail": true,
-             "overwritePDFConfig": true
-         }'>
+    <!-- Main Stage -->
+    <div id="flipbook-stage">
+        <!-- Custom Loading Spinner -->
+        <div id="loading-screen">
+            <div class="spinner"></div>
+            <span>LOADING MJ SURGICAL CATALOG...</span>
+        </div>
+
+        <!-- Canvas Flipbook Element -->
+        <div id="book-container"></div>
     </div>
 
-    <!-- Core Engine Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/js/dflip.min.js"></script>
-
     <script>
-        // Functions to change backgrounds dynamically via buttons
+        // Theme Switcher Functions
         function setOuterBg(color) {
             document.documentElement.style.setProperty('--outer-bg', color);
         }
@@ -149,6 +168,67 @@
         function setInnerBg(color) {
             document.documentElement.style.setProperty('--inner-bg', color);
         }
+
+        // Initialize PDF rendering and Physics Page-Flip
+        async function loadPDFBook() {
+            const url = 'document.pdf'; // Path to your PDF file in the same folder
+            
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+            try {
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdfDoc = await loadingTask.promise;
+                const numPages = pdfDoc.numPages;
+
+                const bookContainer = document.getElementById('book-container');
+                
+                // Generate high-resolution canvas elements for every page
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const viewport = page.getViewport({ scale: 2.0 }); // 2.0 scale for ultra-sharp text
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    
+                    // Style page card shadow layers
+                    canvas.className = 'page-canvas';
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    bookContainer.appendChild(canvas);
+                }
+
+                // Hide loading screen and display the interactive book stage
+                document.getElementById('loading-screen').style.display = 'none';
+                bookContainer.style.display = 'block';
+
+                // Initialize Page-Flip physics engine with mouse-following corner curl
+                const pageFlip = new St.PageFlip(bookContainer, {
+                    width: 550,
+                    height: 750,
+                    size: "stretch",
+                    minWidth: 300,
+                    maxWidth: 1000,
+                    minHeight: 400,
+                    maxHeight: 1200,
+                    maxShadowOpacity: 0.5,
+                    showCover: true,
+                    mobileScrollSupport: false,
+                    useMouse: true,               // Enables precise mouse-corner gripping
+                    flippingTime: 800             // Buttery smooth organic speed
+                });
+
+                pageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
+
+            } catch (error) {
+                console.error("Error loading PDF: ", error);
+                document.getElementById('loading-screen').innerHTML = "<span style='color:#ff6b6b;'>Failed to load PDF. Check file name.</span>";
+            }
+        }
+
+        // Run the builder on startup
+        window.addEventListener('DOMContentLoaded', loadPDFBook);
     </script>
 </body>
 </html>
