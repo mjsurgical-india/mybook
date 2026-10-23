@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Beautiful Flipbook</title>
-    
+    <title>MJ Surgical Catalog - 3D Flipbook</title>
+
+    <!-- DearFlip 3D Viewer Stylesheet -->
+    <link href="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/css/dflip.min.css" rel="stylesheet">
+
     <style>
-        /* Sets up a clean background for your book presentation */
         body {
             margin: 0;
             padding: 0;
@@ -16,73 +18,25 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
-            font-family: Arial, sans-serif;
         }
-
-        /* The master container for your flipbook animation */
-        #flipbook {
-            width: 800px;
-            height: 500px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        }
-
-        /* Styles for individual pages inside the book */
-        #flipbook .page {
-            width: 400px;
-            height: 500px;
-            background-color: white;
-            line-height: 500px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-        }
-
-        /* Styles for the front and back cover */
-        #flipbook .cover {
-            background-color: #2c3e50;
-            color: white;
+        #flipbook-container {
+            width: 90%;
+            height: 85vh;
+            max-width: 1200px;
+            box-shadow: 0px 10px 40px rgba(0,0,0,0.6);
+            background: #222;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
 
-    <!-- 
-       EVERY DIV INSIDE THIS LAYOUT ACTS AS A PAGE.
-       You can add text, headings, or images to customize your book layout easily.
-    -->
-    <div id="flipbook">
-        <!-- Page 1: Front Cover -->
-        <div class="page cover">📘 Welcome to My Book</div>
-        
-        <!-- Page 2 & 3: Inside Layout -->
-        <div class="page">This is Page 2</div>
-        <div class="page">This is Page 3</div>
-        
-        <!-- Page 4 & 5: More Content -->
-        <div class="page">This is Page 4</div>
-        <div class="page">This is Page 5</div>
-        
-        <!-- Page 6: Back Cover -->
-        <div class="page cover">The End</div>
-    </div>
+    <!-- The Flipbook Container pointing directly to your PDF file in the same folder -->
+    <div id="flipbook-container" class="_df_book" source="document.pdf"></div>
 
-    <!-- Core Turn.js Animation Scripts Loaded Safely via CDN -->
-    <script type="text/javascript" src="https://jquery.com"></script>
-    <script type="text/javascript" src="https://cloudflare.com"></script>
-    
-    <script type="text/javascript">
-        // Start the flipbook animation rules instantly
-        $(document).ready(function() {
-            $("#flipbook").turn({
-                width: 800,
-                height: 500,
-                autoCenter: true,
-                gradients: true
-            });
-        });
-    </script>
+    <!-- Working Engine Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/js/dflip.min.js"></script>
+
 </body>
 </html>
