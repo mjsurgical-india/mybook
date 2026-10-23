@@ -99,6 +99,8 @@
         #book-container {
             display: none; /* Shown after PDF renders */
             margin: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         /* On-Screen Navigation Arrow Buttons */
@@ -243,7 +245,7 @@
                 document.getElementById('loading-screen').style.display = 'none';
                 bookContainer.style.display = 'block';
 
-                // Initialize Page-Flip engine with showCover set to false for uniform soft-page motion everywhere
+                // Initialize Page-Flip engine with showCover set to false for uniform soft paper-flip motion on ALL pages
                 globalPageFlip = new St.PageFlip(bookContainer, {
                     width: pdfWidth,
                     height: pdfHeight,
@@ -253,9 +255,9 @@
                     minHeight: 400,
                     maxHeight: 1100,
                     maxShadowOpacity: 0.5,
-                    showCover: false,            // Disabled hardcover mode so all pages use flexible paper motion
+                    showCover: false,            /* Disables hard-cover mode so first and last pages flex smoothly like middle pages */
                     mobileScrollSupport: false,
-                    useMouse: true,              // Mouse-drag corner peel
+                    useMouse: true,              /* Mouse-drag corner peel */
                     flippingTime: 900
                 });
 
