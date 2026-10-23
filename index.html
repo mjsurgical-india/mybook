@@ -12,8 +12,13 @@
 
     <style>
         :root {
-            --outer-bg: #ffffff;
-            --inner-bg: #5ca595;
+            --outer-bg: #ffffff;     /* Default Outer Background */
+            --inner-bg: #5ca595;     /* Default Teal Inner Stage */
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
         }
 
         body {
@@ -25,12 +30,13 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
             font-family: Arial, sans-serif;
             transition: background-color 0.3s ease;
         }
 
-        /* Top Control Panel */
+        /* Top Theme Control Panel */
         #control-panel {
             position: absolute;
             top: 12px;
@@ -76,23 +82,31 @@
             background: #e0e0e0;
         }
 
-        /* Centered Stage Box */
+        /* Perfectly Centered Stage Box with Fixed Margins & Equal Padding */
         #flipbook-stage {
-            width: 90vw;
-            height: 82vh;
-            max-width: 1350px;
-            max-height: 820px;
-            box-shadow: 0px 25px 60px rgba(0,0,0,0.35);
+            width: 92vw;
+            height: 80vh;
+            max-width: 1300px;
+            max-height: 800px;
+            box-shadow: 0px 20px 50px rgba(0,0,0,0.3);
             background-color: var(--inner-bg);
-            border-radius: 12px;
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             transition: background-color 0.3s ease;
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 35px 60px; /* Uniform margins so pages never touch borders */
             overflow: hidden;
+        }
+
+        /* Interactive Canvas Container */
+        #book-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #book-container {
@@ -100,6 +114,7 @@
             margin: auto;
         }
 
+        /* Navigation Arrows */
         .nav-btn {
             position: absolute;
             top: 50%;
@@ -107,8 +122,8 @@
             background: rgba(0, 0, 0, 0.6);
             color: white;
             border: none;
-            width: 45px;
-            height: 45px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             font-size: 20px;
             cursor: pointer;
@@ -121,12 +136,13 @@
         }
 
         .nav-btn:hover {
-            background: rgba(92, 165, 149, 0.9);
+            background: rgba(255, 255, 255, 0.9);
+            color: #222;
             transform: translateY(-50%) scale(1.1);
         }
 
-        #prev-btn { left: 20px; }
-        #next-btn { right: 20px; }
+        #prev-btn { left: 15px; }
+        #next-btn { right: 15px; }
 
         /* Custom Loading Screen */
         #loading-screen {
@@ -140,7 +156,6 @@
             font-size: 14px;
             letter-spacing: 1px;
             text-align: center;
-            max-width: 80%;
         }
 
         .spinner {
@@ -155,6 +170,11 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .page-canvas {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+            background-color: #ffffff;
         }
     </style>
 </head>
@@ -179,19 +199,21 @@
         </div>
     </div>
 
-    <!-- Main Stage -->
+    <!-- Main Stage Box -->
     <div id="flipbook-stage">
         <button id="prev-btn" class="nav-btn" title="Previous Page">&#10094;</button>
         <button id="next-btn" class="nav-btn" title="Next Page">&#10095;</button>
 
-        <!-- Loading Screen Indicator -->
+        <!-- Loading Screen -->
         <div id="loading-screen">
             <div class="spinner"></div>
-            <span id="loading-text">INITIALIZING PDF ENGINE...</span>
+            <span id="loading-text">LOADING BROCHURE...</span>
         </div>
 
-        <!-- Canvas Flipbook Element -->
-        <div id="book-container"></div>
+        <!-- Canvas Flipbook Wrapper -->
+        <div id="book-wrapper">
+            <div id="book-container"></div>
+        </div>
     </div>
 
     <script>
@@ -209,11 +231,10 @@
             const loadingText = document.getElementById('loading-text');
             const url = './document.pdf'; 
             
-            // Set up worker
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
             try {
-                loadingText.innerText = 'LOADING BROCHURE (12.4 MB)...';
+                loadingText.innerText = 'LOADING BROCHURE...';
                 
                 const loadingTask = pdfjsLib.getDocument({
                     url: url,
@@ -228,21 +249,34 @@
                 
                 // Read Page 1 for initial viewport dimensions
                 const firstPage = await pdfDoc.getPage(1);
-                const initialViewport = firstPage.getViewport({ scale: 1.2 });
-                const pdfWidth = initialViewport.width;
-                const pdfHeight = initialViewport.height;
+                const unscaledViewport = firstPage.getViewport({ scale: 1.0 });
 
-                // Render each page sequentially to prevent memory overload
+                // Calculate stage height available for the book
+                const stage = document.getElementById('flipbook-stage');
+                const availHeight = stage.clientHeight - 70; // 35px top & bottom margin
+                const availWidth = (stage.clientWidth - 120) / 2; // Split spread width across 2 pages
+
+                // Calculate scale to fit inside stage perfectly
+                const scale = Math.min(availHeight / unscaledViewport.height, availWidth / unscaledViewport.width);
+
+                const renderViewport = firstPage.getViewport({ scale: scale * 1.5 }); // High-DPI crisp rendering
+                const displayWidth = Math.round(unscaledViewport.width * scale);
+                const displayHeight = Math.round(unscaledViewport.height * scale);
+
                 for (let i = 1; i <= numPages; i++) {
-                    loadingText.innerText = `RENDERING PAGE ${i} OF ${numPages}...`;
+                    loadingText.innerText = `PROCESSING PAGE ${i} OF ${numPages}...`;
 
                     const page = await pdfDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.2 }); 
+                    const viewport = page.getViewport({ scale: scale * 1.5 }); 
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
+                    
+                    // Display dimensions locked to prevent cropping
+                    canvas.style.width = displayWidth + 'px';
+                    canvas.style.height = displayHeight + 'px';
                     canvas.className = 'page-canvas';
 
                     await page.render({ 
@@ -253,25 +287,23 @@
                     bookContainer.appendChild(canvas);
                 }
 
-                loadingText.innerText = 'BUILDING 3D BOOK...';
-
                 document.getElementById('loading-screen').style.display = 'none';
                 bookContainer.style.display = 'block';
 
-                // Initialize 3D PageFlip
+                // Initialize 3D PageFlip with proportional bounds
                 globalPageFlip = new St.PageFlip(bookContainer, {
-                    width: pdfWidth,
-                    height: pdfHeight,
-                    size: "stretch",
-                    minWidth: 300,
-                    maxWidth: 800,
-                    minHeight: 400,
-                    maxHeight: 1100,
-                    maxShadowOpacity: 0.5,
-                    showCover: true,
+                    width: displayWidth,
+                    height: displayHeight,
+                    size: "fixed",               // Fixed fit prevents clipping at stage boundaries
+                    minWidth: 250,
+                    maxWidth: 700,
+                    minHeight: 350,
+                    maxHeight: 1000,
+                    maxShadowOpacity: 0.4,
+                    showCover: true,             // Keeps single front/back cover centered
                     mobileScrollSupport: false,
                     useMouse: true,
-                    flippingTime: 900
+                    flippingTime: 850
                 });
 
                 globalPageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
@@ -291,7 +323,7 @@
                 document.getElementById('loading-screen').innerHTML = `
                     <div style="color:#ff6b6b; font-size:13px; line-height:1.6;">
                         <strong>FAILED TO LOAD BROCHURE</strong><br/>
-                        ${error.message || 'Please check if document.pdf exists.'}
+                        ${error.message || 'Check document.pdf in repository root.'}
                     </div>
                 `;
             }
