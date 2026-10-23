@@ -3,47 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MJ Surgical - Premium 3D Flipbook</title>
+    <title>MJ Surgical - Interactive 3D Flipbook</title>
 
     <!-- DearFlip 3D Viewer Stylesheet -->
     <link href="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/css/dflip.min.css" rel="stylesheet">
 
     <style>
+        :root {
+            --bg-color: #5ca595; /* Default Brand Color */
+        }
+
         body {
             margin: 0;
             padding: 0;
-            /* Updated background color to your hex code */
-            background-color: #5ca595;
+            background-color: var(--bg-color);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s ease;
         }
+
+        /* Theme Switcher Bar */
+        #theme-selector {
+            position: absolute;
+            top: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 999;
+        }
+        #theme-selector button {
+            background: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        #theme-selector button:hover {
+            background: #ddd;
+        }
+
+        /* The book container where the page-behind color takes effect */
         #flipbook-container {
             width: 92%;
-            height: 88vh;
+            height: 85vh;
             max-width: 1300px;
-            box-shadow: 0px 15px 50px rgba(0,0,0,0.4);
-            background: #ffffff;
-            border-radius: 6px;
+            box-shadow: 0px 20px 60px rgba(0,0,0,0.5);
+            background: #5ca595; /* Page behind / inner stage color */
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
 
+    <!-- Theme Switcher Buttons -->
+    <div id="theme-selector">
+        <button onclick="setTheme('#5ca595')">🎨 Brand (#5ca595)</button>
+        <button onclick="setTheme('#111111')">🌙 Dark Mode</button>
+        <button onclick="setTheme('#ffffff')">☀️ White Mode</button>
+    </div>
+
     <!-- 
-      Upgraded Flipbook Container with Premium Settings:
-      - 3D WebGL mode enabled for corner-dragging wave/fold motion
-      - Higher resolution settings to fix blur
+      Flipbook Container with Corner-Dragging Physics:
+      - webgl: true enables 3D paper bending and smooth mouse dragging
+      - duration: 1200 slows down the flip speed for a smoother transition
     -->
     <div id="flipbook-container" class="_df_book" source="document.pdf" 
-         settings='{"webgl":true, "pageTextureSize": 2048, "soundEnable": true, "duration": 800, "autoEnableOutline": false, "autoEnableThumbnail": true}'>
+         settings='{
+             "webgl": true, 
+             "pageTextureSize": 2048, 
+             "soundEnable": true, 
+             "duration": 1200, 
+             "autoEnableOutline": false, 
+             "autoEnableThumbnail": true
+         }'>
     </div>
 
     <!-- Working Engine Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@dearhive/dearflip-jquery-flipbook@1.7.3/dflip/js/dflip.min.js"></script>
 
+    <script>
+        // Function to dynamically change the outer background color
+        function setTheme(color) {
+            document.documentElement.style.setProperty('--bg-color', color);
+        }
+    </script>
 </body>
 </html>
