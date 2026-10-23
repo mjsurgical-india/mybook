@@ -78,10 +78,10 @@
 
         /* Perfectly Centered Stage Box with Fixed Uniform Margins */
         #flipbook-stage {
-            width: 86vw;
-            height: 80vh;
-            max-width: 1250px;
-            max-height: 780px;
+            width: 90vw;
+            height: 85vh;
+            max-width: 1350px;
+            max-height: 850px;
             box-shadow: 0px 25px 60px rgba(0,0,0,0.35);
             background-color: var(--inner-bg);
             border-radius: 12px;
@@ -90,7 +90,7 @@
             align-items: center;
             position: relative;
             transition: background-color 0.3s ease;
-            padding: 30px; /* Enforces uniform padding so PDF stays completely inside */
+            padding: 20px;
             box-sizing: border-box;
             overflow: hidden;
         }
@@ -99,6 +99,8 @@
         #book-container {
             display: none; /* Shown after PDF renders */
             margin: auto;
+            max-width: 100%;
+            max-height: 100%;
         }
 
         /* Custom Styled #5ca595 Loading Screen */
@@ -172,7 +174,7 @@
             document.documentElement.style.setProperty('--inner-bg', color);
         }
 
-        // Initialize PDF rendering and Physics Page-Flip with proper scaling constraints
+        // Initialize PDF rendering and Physics Page-Flip with full-spread layout
         async function loadPDFBook() {
             const url = 'document.pdf'; 
             
@@ -185,16 +187,16 @@
 
                 const bookContainer = document.getElementById('book-container');
                 
-                // Read first page to calculate accurate proportions safely
+                // Read first page to calculate exact width and height proportions
                 const firstPage = await pdfDoc.getPage(1);
-                const initialViewport = firstPage.getViewport({ scale: 1.2 });
-                const pdfWidth = initialViewport.width;
-                const pdfHeight = initialViewport.height;
+                const initialViewport = firstPage.getViewport({ scale: 1.5 });
+                const singlePageWidth = initialViewport.width;
+                const singlePageHeight = initialViewport.height;
 
                 // Generate high-resolution canvas elements for every page
                 for (let i = 1; i <= numPages; i++) {
                     const page = await pdfDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.2 }); 
+                    const viewport = page.getViewport({ scale: 1.5 }); 
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
@@ -211,15 +213,15 @@
                 document.getElementById('loading-screen').style.display = 'none';
                 bookContainer.style.display = 'block';
 
-                // Initialize Page-Flip physics engine with safe bounded container size to avoid cutting
+                // Initialize Page-Flip physics engine with spread sizing so both pages show fully
                 const pageFlip = new St.PageFlip(bookContainer, {
-                    width: pdfWidth,
-                    height: pdfHeight,
-                    size: "fixed",
-                    minWidth: 280,
-                    maxWidth: 600,
+                    width: singlePageWidth,
+                    height: singlePageHeight,
+                    size: "stretch",
+                    minWidth: 300,
+                    maxWidth: 800,
                     minHeight: 400,
-                    maxHeight: 700,
+                    maxHeight: 1100,
                     maxShadowOpacity: 0.4,
                     showCover: true,
                     mobileScrollSupport: false,
