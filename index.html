@@ -1,291 +1,345 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MJ Surgical - Premium 3D Page Flipbook</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MJ Surgical - Soft Page Flip Brochure</title>
 
-    <!-- Page-Flip 3D Engine Stylesheet -->
-    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
-    <!-- PDF.js to render PDF pages crisply onto canvas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
-    <style>
-        :root {
-            --outer-bg: #ffffff;     /* Default: White outer background */
-            --inner-bg: #5ca595;     /* Default: Green inner stage background */
-        }
+  <style>
+    :root {
+      --outer-bg: #ffffff;
+      --inner-bg: #5ca595;
+    }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--outer-bg);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            transition: background-color 0.3s ease;
-        }
+    * { box-sizing: border-box; }
 
-        /* Top Theme Control Panel */
-        #control-panel {
-            position: absolute;
-            top: 12px;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 8px 18px;
-            border-radius: 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 9999;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            color: #fff;
-            font-size: 13px;
-            font-weight: bold;
-        }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 82px 16px 16px;
+      background: var(--outer-bg);
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color .25s ease;
+    }
 
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+    #control-panel {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px 16px;
+      max-width: calc(100vw - 24px);
+      padding: 9px 14px;
+      color: #fff;
+      background: rgba(0,0,0,.78);
+      border-radius: 18px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.25);
+      font-size: 12px;
+    }
 
-        .control-panel-divider {
-            width: 1px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.3);
-        }
+    .control-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
 
-        .btn-theme {
-            background: #ffffff;
-            color: #222;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-            transition: all 0.2s ease;
-        }
+    .control-panel-divider {
+      width: 1px;
+      height: 22px;
+      background: rgba(255,255,255,.35);
+    }
 
-        .btn-theme:hover {
-            transform: scale(1.05);
-            background: #e0e0e0;
-        }
+    .btn-theme {
+      border: 0;
+      border-radius: 12px;
+      padding: 6px 9px;
+      background: #fff;
+      color: #222;
+      cursor: pointer;
+      font-size: 11px;
+    }
 
-        /* Main Stage Frame */
-        #flipbook-stage {
-            width: 92vw;
-            height: 85vh;
-            max-width: 1400px;
-            max-height: 850px;
-            box-shadow: 0px 25px 60px rgba(0,0,0,0.35);
-            background-color: var(--inner-bg);
-            border-radius: 12px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            transition: background-color 0.3s ease;
-            padding: 15px;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
+    .btn-theme:hover { background: #e7e7e7; }
 
-        /* The Interactive Canvas Flipbook Container */
-        #book-container {
-            display: none; /* Shown after PDF renders */
-            margin: auto;
-        }
+    #flipbook-stage {
+      width: min(94vw, 1200px);
+      height: min(82vh, 850px);
+      min-height: 360px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 24px 58px;
+      border-radius: 12px;
+      background: var(--inner-bg);
+      box-shadow: 0 20px 55px rgba(0,0,0,.28);
+      transition: background-color .25s ease;
+    }
 
-        /* On-Screen Navigation Arrow Buttons */
-        .nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            z-index: 999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background 0.2s, transform 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+    #book-container {
+      display: none;
+      margin: auto;
+      background: transparent;
+    }
 
-        .nav-btn:hover {
-            background: rgba(92, 165, 149, 0.9);
-            transform: translateY(-50%) scale(1.1);
-        }
+    #book-container .page {
+      background: #fff;
+      overflow: hidden;
+    }
 
-        #prev-btn { left: 20px; }
-        #next-btn { right: 20px; }
+    #book-container .page canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
 
-        /* Custom Styled #5ca595 Loading Screen */
-        #loading-screen {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 50%;
+      color: #fff;
+      background: rgba(0,0,0,.62);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,.22);
+    }
 
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #ffffff;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
+    .nav-btn:hover { background: rgba(30,30,30,.9); }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    #prev-btn { left: 10px; }
+    #next-btn { right: 10px; }
+
+    #loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .9s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 105px 8px 8px; }
+
+      #control-panel {
+        gap: 8px;
+        border-radius: 12px;
+      }
+
+      .control-panel-divider { display: none; }
+
+      #flipbook-stage {
+        width: 96vw;
+        height: 78vh;
+        min-height: 320px;
+        padding: 16px 42px;
+      }
+
+      .nav-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 17px;
+      }
+
+      #prev-btn { left: 4px; }
+      #next-btn { right: 4px; }
+    }
+  </style>
 </head>
+
 <body>
-
-    <!-- Control Panel -->
-    <div id="control-panel">
-        <div class="control-group">
-            <span>Outer Background:</span>
-            <button class="btn-theme" onclick="setOuterBg('#ffffff')">White Mode</button>
-            <button class="btn-theme" onclick="setOuterBg('#5ca595')">MJ Surgical</button>
-            <button class="btn-theme" onclick="setOuterBg('#1a1a1a')">Dark Mode</button>
-        </div>
-
-        <div class="control-panel-divider"></div>
-
-        <div class="control-group">
-            <span>Inner Stage:</span>
-            <button class="btn-theme" onclick="setInnerBg('#5ca595')">MJ Surgical</button>
-            <button class="btn-theme" onclick="setInnerBg('#ffffff')">White Stage</button>
-            <button class="btn-theme" onclick="setInnerBg('#2b2b2b')">Dark Stage</button>
-        </div>
+  <div id="control-panel">
+    <div class="control-group">
+      <span>Outer Background:</span>
+      <button class="btn-theme" onclick="setOuterBg('#ffffff')">White</button>
+      <button class="btn-theme" onclick="setOuterBg('#5ca595')">MJ Surgical</button>
+      <button class="btn-theme" onclick="setOuterBg('#1a1a1a')">Dark</button>
     </div>
 
-    <!-- Main Stage -->
-    <div id="flipbook-stage">
-        <!-- On-Screen Navigation Icons -->
-        <button id="prev-btn" class="nav-btn" title="Previous Page">&#10094;</button>
-        <button id="next-btn" class="nav-btn" title="Next Page">&#10095;</button>
+    <div class="control-panel-divider"></div>
 
-        <!-- Custom Loading Spinner -->
-        <div id="loading-screen">
-            <div class="spinner"></div>
-            <span>LOADING MJ SURGICAL CATALOG...</span>
-        </div>
+    <div class="control-group">
+      <span>Inner Stage:</span>
+      <button class="btn-theme" onclick="setInnerBg('#5ca595')">MJ Surgical</button>
+      <button class="btn-theme" onclick="setInnerBg('#ffffff')">White</button>
+      <button class="btn-theme" onclick="setInnerBg('#2b2b2b')">Dark</button>
+    </div>
+  </div>
 
-        <!-- Canvas Flipbook Element -->
-        <div id="book-container"></div>
+  <main id="flipbook-stage">
+    <button id="prev-btn" class="nav-btn"
+      title="Previous page" aria-label="Previous page">&#10094;</button>
+
+    <button id="next-btn" class="nav-btn"
+      title="Next page" aria-label="Next page">&#10095;</button>
+
+    <div id="loading-screen">
+      <div class="spinner"></div>
+      <span>LOADING MJ SURGICAL CATALOG...</span>
     </div>
 
-    <script>
-        // Theme Switcher Functions
-        function setOuterBg(color) {
-            document.documentElement.style.setProperty('--outer-bg', color);
+    <div id="book-container"></div>
+  </main>
+
+  <script>
+    function setOuterBg(color) {
+      document.documentElement.style.setProperty('--outer-bg', color);
+    }
+
+    function setInnerBg(color) {
+      document.documentElement.style.setProperty('--inner-bg', color);
+    }
+
+    let globalPageFlip = null;
+
+    async function loadPDFBook() {
+      const pdfUrl = 'document.pdf';
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+      const loadingScreen = document.getElementById('loading-screen');
+      const bookContainer = document.getElementById('book-container');
+
+      try {
+        const pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        const firstPdfPage = await pdfDoc.getPage(1);
+        const baseViewport = firstPdfPage.getViewport({ scale: 1 });
+
+        const pageWidth = baseViewport.width;
+        const pageHeight = baseViewport.height;
+
+        for (let pageNumber = 1;
+             pageNumber <= pdfDoc.numPages;
+             pageNumber++) {
+
+          const pdfPage = await pdfDoc.getPage(pageNumber);
+          const viewport = pdfPage.getViewport({ scale: 1.6 });
+
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d', { alpha: false });
+
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          canvas.className = 'page-canvas';
+
+          await pdfPage.render({
+            canvasContext: context,
+            viewport: viewport
+          }).promise;
+
+          // Every PDF page becomes a regular, soft page.
+          const sheet = document.createElement('div');
+          sheet.className = 'page';
+          sheet.appendChild(canvas);
+          bookContainer.appendChild(sheet);
         }
 
-        function setInnerBg(color) {
-            document.documentElement.style.setProperty('--inner-bg', color);
-        }
+        loadingScreen.style.display = 'none';
+        bookContainer.style.display = 'block';
 
-        let globalPageFlip = null;
+        globalPageFlip = new St.PageFlip(bookContainer, {
+          width: pageWidth,
+          height: pageHeight,
+          size: 'stretch',
 
-        // Initialize PDF rendering with natural soft-page physics across all pages
-        async function loadPDFBook() {
-            const url = 'document.pdf'; 
-            
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+          minWidth: 250,
+          maxWidth: 900,
+          minHeight: 350,
+          maxHeight: 1200,
 
-            try {
-                const loadingTask = pdfjsLib.getDocument(url);
-                const pdfDoc = await loadingTask.promise;
-                const numPages = pdfDoc.numPages;
+          autoSize: true,
+          maxShadowOpacity: 0.35,
 
-                const bookContainer = document.getElementById('book-container');
-                
-                const firstPage = await pdfDoc.getPage(1);
-                const initialViewport = firstPage.getViewport({ scale: 1.5 });
-                const pdfWidth = initialViewport.width;
-                const pdfHeight = initialViewport.height;
+          showCover: false,
+          usePortrait: true,
+          startPage: 0,
 
-                // Render all pages normally
-                for (let i = 1; i <= numPages; i++) {
-                    const page = await pdfDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: 1.5 }); 
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-                    canvas.className = 'page-canvas';
+          mobileScrollSupport: false,
+          useMouse: true,
+          flippingTime: 900,
+          drawShadow: true
+        });
 
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    bookContainer.appendChild(canvas);
-                }
+        globalPageFlip.loadFromHTML(
+          bookContainer.querySelectorAll('.page')
+        );
 
-                document.getElementById('loading-screen').style.display = 'none';
-                bookContainer.style.display = 'block';
+        document.getElementById('next-btn')
+          .addEventListener('click', () => {
+            globalPageFlip.flipNext();
+          });
 
-                // Initialize Page-Flip engine with showCover: false for uniform soft paper-curl motion on every single page
-                globalPageFlip = new St.PageFlip(bookContainer, {
-                    width: pdfWidth,
-                    height: pdfHeight,
-                    size: "stretch",
-                    minWidth: 300,
-                    maxWidth: 700,
-                    minHeight: 400,
-                    maxHeight: 1000,
-                    maxShadowOpacity: 0.4,
-                    showCover: false,            // Ensures zero hardcover stiff binding behavior
-                    mobileScrollSupport: false,
-                    useMouse: true,              // Natural mouse dragging
-                    flippingTime: 900
-                });
+        document.getElementById('prev-btn')
+          .addEventListener('click', () => {
+            globalPageFlip.flipPrev();
+          });
 
-                globalPageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'ArrowRight') {
+            globalPageFlip.flipNext();
+          }
 
-                // Connect On-Screen Arrow Buttons
-                document.getElementById('next-btn').addEventListener('click', () => {
-                    globalPageFlip.flipNext();
-                });
+          if (event.key === 'ArrowLeft') {
+            globalPageFlip.flipPrev();
+          }
+        });
 
-                document.getElementById('prev-btn').addEventListener('click', () => {
-                    globalPageFlip.flipPrev();
-                });
+        window.addEventListener('resize', () => {
+          if (globalPageFlip) {
+            globalPageFlip.update();
+          }
+        });
 
-                // Connect Keyboard Arrow Keys Support (Left/Right arrows)
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'ArrowRight') {
-                        globalPageFlip.flipNext();
-                    } else if (e.key === 'ArrowLeft') {
-                        globalPageFlip.flipPrev();
-                    }
-                });
+      } catch (error) {
+        console.error('Error loading PDF:', error);
 
-            } catch (error) {
-                console.error("Error loading PDF: ", error);
-                document.getElementById('loading-screen').innerHTML = "<span style='color:#ff6b6b;'>Failed to load PDF. Check file name.</span>";
-            }
-        }
+        loadingScreen.innerHTML =
+          '<span style="color:#ffdddd">' +
+          'Could not load document.pdf. Make sure the PDF is ' +
+          'in the same folder and open this page through a local web server.' +
+          '</span>';
+      }
+    }
 
-        window.addEventListener('DOMContentLoaded', loadPDFBook);
-    </script>
+    window.addEventListener('DOMContentLoaded', loadPDFBook);
+  </script>
 </body>
 </html>
